@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script type="text/javascript" src="Paises.js"></script>
+    <script type="text/javascript" src="Ciudades.js"></script>
+    <script type="text/javascript" src="Departamentos.js"></script>
+    <script type="text/javascript" src="Hidrografia.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/">
+    <link rel="stylesheet" href="dist/MarkerCluster.css">
+    <link rel="stylesheet" href="dist/MarkerCluster.Default.css">
+    <link rel="stylesheet" href="Leaflet-MiniMap-master/dist/Control.MiniMap.min.css">
+    <script src="dist/leaflet.markercluster.js"></script>
+    <script src="Leaflet-MiniMap-master/dist/Control.MiniMap.min.js"></script>
+    <link rel="stylesheet" href="Leaflet.StyledLayerControl-master/css/styledLayerControl.css" />
+    <script src="Leaflet.StyledLayerControl-master/src/styledLayerControl.js"></script>
+    <title>WebMapping - EJ4</title>
+
+    <style>
+        #map {
+            width: 100%;
+            height: 640px;
+            box-shadow: 5px 5px 5px #888;
+        }
+
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .info h2 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        .legend {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map">
+    </div>
+</body>
+
+<script>
+    function getColorPaises(d) {
+        return d > 100000000 ? '#F6230A' :
+            d > 50000000 ? '#F6710A' :
+                d > 20000000 ? '#F6A00A' :
+                    d > 10000000 ? '#F6EB0A' :
+                        d > 5000000 ? '#A7F60A' :
+                            d > 2000000 ? '#79F60A' :
+                                d > 1000000 ? '#5CF60A' :
+                                    '#06DD02';
+    };
+
+    function getColorDepartamentos(d) {
+        return d > 90000000000 ? '#0D9200' :
+            d > 70000000000 ? '#12C500' :
+                d > 50000000000 ? '#17FA00' :
+                    d > 40000000000 ? '#57FF46' :
+                        '#92FD87';
+    };
+
+    function stylePaises(feature) {
+        return {
+            fillColor: getColorPaises(feature.properties.pop_est),
+            weight: 2,
+            opacity: 1,
+            color: 'white',
+            dashArray: '3',
+            fillOpacity: 0.7
+        };
+    }
+
+    function Depstyle(feature) {
+        return {
+            fillColor: getColorDepartamentos(feature.properties.SHAPE_AREA),
+            weight: 0.7,
+            color: 'black',
+            fillOpacity: 1
+        };
+    }
+
+    function popupPais(feature, layer) {
+        if (feature.properties && feature.properties.name) {
+            layer.bindPopup('<b>Pais: </b>' + feature.properties.name + '<br><b>Población: </b>' + Intl.NumberFormat().format(feature.properties.pop_est));
+        }
+    }
+
+    function popupDep(feature, layer) {
+        if (feature.properties && feature.properties.COD_DANE) {
+            layer.bindPopup('<b>Departamento: </b>' + feature.properties.NOM_DEPART + '<br><b>Código DANE: </b>' + feature.properties.COD_DANE + '<br><b>Área: </b>' + Intl.NumberFormat().format(feature.properties.SHAPE_AREA));
+        }
+    };
+
+    var icon_capital = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/276/276020.png',
+        iconSize: [25, 25],
+        popupAnchor: [-1, -10]
+    });
+
+    var icon_ciudad = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/594/594580.png',
+        iconSize: [15, 15],
+        popupAnchor: [-1, -10]
+    });
+
+    var markers = L.markerClusterGroup();
+
+    function styleMarker(feature, latlgn) {
+        var info = '<b>Pais: </b>' + feature.properties.PAIS + '<br>'
+        var title = info + (feature.properties.CAPITAL == 'S' ? '<b>Capital: </b>' + feature.properties.CIUDAD :
+            '<b>Ciudad: </b>' + feature.properties.CIUDAD)
+        title = title + '<br> <b>Capital: </b>' + feature.properties.CAPITAL
+        return feature.properties.CAPITAL == 'S' ? L.marker(latlgn, {
+            icon: icon_capital,
+            draggable: false
+        }).bindPopup(title) :
+            L.marker(latlgn, {
+                icon: icon_ciudad,
+                draggable: false
+            }).bindPopup(title);
+    };
+
+    var carto_light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '©OpenStreetMap, ©CartoDB', subdomains: 'abcd', maxZoom: 24 });
+
+    var OMS = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributiors'
+    });
+
+    var map = new L.map('map', {
+        center: [1.6207919206279122, -75.60447018002917],
+        layers: [OMS],
+        zoom: 5
+    });
+
+    var minimap = new L.Control.MiniMap(carto_light, {
+        toggleDisplay: true,
+        minimized: false,
+        position: "bottomleft"
+    }).addTo(map);
+
+    // ----------------  CAPA JSON ---------------------
+
+    var pai = L.geoJson(Paises, {
+        style: stylePaises,
+        onEachFeature: popupPais
+    }).addTo(map);
+
+    var dep = L.geoJson(Departamentos, {
+        style: Depstyle,
+        onEachFeature: popupDep
+    }).addTo(map);
+
+    var ciu = L.geoJson(Ciudades, {
+        pointToLayer: styleMarker
+    });
+
+    markers.addLayer(ciu).addTo(map);
+
+    // --------------------------------------------------
+
+    L.control.scale({
+        position: 'bottomleft',
+        metric: true,
+        imperial: false
+    }).addTo(map);
+
+    var baseMaps = [{
+            groupName: "OSM Base Maps",
+            layers: {
+                "OpenStreetMaps": OMS
+            }
+        }
+    ];
+
+    var overlays = [{
+            groupName: "CAPAS",
+            expanded: true,
+            layers: {
+                "PAISES": pai,
+                "DEPARTAMENTOS": dep,
+                "CIUDADES": markers
+            }
+        }
+    ];
+
+    var options = {
+        container_width: "300px",
+        group_maxHeight: "80px",
+        exclusive: false,
+        collapsed: true,
+        position: 'topright'
+    };
+
+    var control = L.Control.styledLayerControl(baseMaps, overlays, options);
+    map.addControl(control);
+</script>
+
+</html>
