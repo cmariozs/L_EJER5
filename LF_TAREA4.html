@@ -141,18 +141,6 @@
         attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributiors'
     });
 
-    var GSAT = L.tileLayer('http://www.google.cn/maps/vt?lyrs=s@189&gl=cn&x={x}&y={y}&z={z}', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributiors'
-    });
-
-    var GROAD = L.tileLayer('https://mt1.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributiors'
-    });
-
-    var GMAP = L.tileLayer('https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributiors'
-    });
-
     var map = new L.map('map', {
         center: [1.6207919206279122, -75.60447018002917],
         layers: [OMS],
@@ -195,14 +183,6 @@
             groupName: "OSM Base Maps",
             layers: {
                 "OpenStreetMaps": OMS
-            }
-        },
-        {
-            groupName: "Google Maps",
-            layers: {
-                "Google Maps": GMAP,
-                "Google Satellite": GSAT,
-                "Google Roads": GROAD
             }
         }
     ];
